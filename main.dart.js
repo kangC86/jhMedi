@@ -81201,7 +81201,7 @@ n=o.e=!0
 o.M_()
 if(o.lV()?!p.ax:n){s=1
 break}p.a3(new A.afI(p))
-o=A.dB("http://sonjobdamd.com/hcregister.php")
+o=A.dB("https://sonjobdamd.com/hcregister.php")
 n=t.N
 m=A.ae(["Content-Type","application/json"],n,n)
 l=p.a.c
@@ -81280,7 +81280,7 @@ $S:0}
 A.afx.prototype={
 $0(){var s=0,r=A.L(t.H),q=this,p,o,n,m
 var $async$$0=A.H(function(a,b){if(a===1)return A.I(b,r)
-while(true)switch(s){case 0:p=A.dB("http://sonjobdamd.com/hccheckid.php")
+while(true)switch(s){case 0:p=A.dB("https://sonjobdamd.com/hccheckid.php")
 o=t.N
 n=A.ae(["Content-Type","application/json"],o,o)
 s=2
@@ -81368,7 +81368,7 @@ if(a0){m.c.ai(t.Pu).f.mM(B.Oc)
 s=1
 break}m.a3(new A.ah_(m))
 p=4
-l=A.dB("http://sonjobdamd.com/hcfindid.php")
+l=A.dB("https://sonjobdamd.com/hcfindid.php")
 a0=t.N
 e=A.ae(["Content-Type","application/json"],a0,a0)
 k=A.x(a0,a0)
@@ -81466,7 +81466,7 @@ wZ(){var s=0,r=A.L(t.H),q,p=this,o,n,m,l,k
 var $async$wZ=A.H(function(a,b){if(a===1)return A.I(b,r)
 while(true)switch(s){case 0:k=B.c.cE(p.d.a.a)
 if(k.length===0){s=1
-break}o=A.dB("http://sonjobdamd.com/hcsendresetcode.php")
+break}o=A.dB("https://sonjobdamd.com/hcsendresetcode.php")
 n=t.N
 m=A.ae(["Content-Type","application/json"],n,n)
 s=3
@@ -81481,7 +81481,7 @@ xs(){var s=0,r=A.L(t.H),q=this,p,o,n,m,l,k
 var $async$xs=A.H(function(a,b){if(a===1)return A.I(b,r)
 while(true)switch(s){case 0:p=B.c.cE(q.e.a.a)
 o=B.c.cE(q.d.a.a)
-n=A.dB("http://sonjobdamd.com/hcverifyresetcode.php")
+n=A.dB("https://sonjobdamd.com/hcverifyresetcode.php")
 m=t.N
 l=A.ae(["Content-Type","application/json"],m,m)
 s=2
@@ -81497,7 +81497,7 @@ while(true)switch(s){case 0:k=B.c.cE(p.d.a.a)
 j=p.f.a.a
 if(j!==p.r.a.a){p.a3(new A.ah9(p))
 s=1
-break}o=A.dB("http://sonjobdamd.com/hcresetpwd.php")
+break}o=A.dB("https://sonjobdamd.com/hcresetpwd.php")
 n=t.N
 m=A.ae(["Content-Type","application/json"],n,n)
 s=3
@@ -81579,7 +81579,7 @@ b=c.a.a
 if(J.cC(d)===0||J.cC(b)===0){n.a3(new A.aiZ(n))
 s=1
 break}p=4
-i=A.dB("http://sonjobdamd.com/hclogin.php")
+i=A.dB("https://sonjobdamd.com/hclogin.php")
 h=t.N
 g=A.ae(["Content-Type","application/json"],h,h)
 s=7
@@ -81835,7 +81835,7 @@ ar(){this.aI()
 this.tR()},
 tR(){var s=0,r=A.L(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h
 var $async$tR=A.H(function(a,b){if(a===1){p.push(b)
-s=q}while(true)switch(s){case 0:i=A.dB(o.a.c==="pending"?"http://sonjobdamd.com/hcgetpendinglist.php":"http://sonjobdamd.com/hcgetuserlist.php")
+s=q}while(true)switch(s){case 0:i=A.dB(o.a.c==="pending"?"https://sonjobdamd.com/hcgetpendinglist.php":"https://sonjobdamd.com/hcgetuserlist.php")
 q=3
 s=6
 return A.P(A.aMJ(i),$async$tR)
@@ -81861,7 +81861,7 @@ return A.K($async$tR,r)},
 pW(a,b){return this.aiq(a,b)},
 aiq(a,b){var s=0,r=A.L(t.H),q=this,p,o,n,m,l,k,j
 var $async$pW=A.H(function(c,d){if(c===1)return A.I(d,r)
-while(true)switch(s){case 0:n=A.dB("http://sonjobdamd.com/hcaccountmanage.php")
+while(true)switch(s){case 0:n=A.dB("https://sonjobdamd.com/hcaccountmanage.php")
 m=t.N
 l=A.ae(["Content-Type","application/json"],m,m)
 s=2
