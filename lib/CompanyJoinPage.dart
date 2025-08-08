@@ -50,7 +50,6 @@ class _CompanyJoinPageState extends State<CompanyJoinPage> {
   bool _submitting = false;
 
   bool get _isClient => widget.userType == "client";
-  bool get _isActor => widget.userType == "actor";
 
   // regex
   final _reUserId = RegExp(r'^[a-z0-9]{1,20}$');

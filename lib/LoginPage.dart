@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+// LoginPage.dart
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'TermsPage.dart';
 import 'FindIDPage.dart';
@@ -15,91 +16,70 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final idController = TextEditingController();
-  final pwController = TextEditingController();
+  final _idController = TextEditingController();
+  final _pwController = TextEditingController();
 
-  String _message = '';
-  Color _messageColor = Colors.red;
+  // 포커스: 아이디 → 비번 → 로그인 흐름
+  final _pwFocus = FocusNode();
 
-  Future<void> _showPendingDialog() async {
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => AlertDialog(
-        title: const Text("가입 안"),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text("안녕하세요, 손잡다메디컬입니다!\n"),
-              Text("현재 입력하신 계정은 심리 검사가 가능한 기관인지 확인중에 있습니다\n"
-                  "기관 승인이 될 때까지, 잠시만 기다려 주시기 바랍니다.\n"),
-              SizedBox(height: 12),
-              Text("가입이 완료되면 입력하신 메일주소로 안내드리겠습니다.\n",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 12),
-              Text("손잡다메디컬 고객지원팀 드림"),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("확인"),
-          ),
-        ],
-      ),
-    );
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _pwController.dispose();
+    _pwFocus.dispose();
+    super.dispose();
   }
-  Future<void> _tryLogin() async {
-    final id = idController.text.trim();
-    final pw = pwController.text;
+
+  Future<void> _login() async {
+    final id = _idController.text.trim();
+    final pw = _pwController.text;
 
     if (id.isEmpty || pw.isEmpty) {
-      setState(() {
-        _message = '아이디와 비밀번호를 입력해주세요';
-        _messageColor = Colors.red;
-      });
+      _showSnack('아이디와 비밀번호를 입력해주세요.');
       return;
     }
 
+    setState(() => _busy = true);
     try {
-      final response = await http.post(
-        Uri.parse("https://sonjobdamd.com/func/hclogin.php"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "userid": id,
-          "pwd": pw,
-        }),
+      // TODO: 서버 주소 확인
+      final res = await http.post(
+        Uri.parse('https://sonjobdamd.com/func/hclogin.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userid': id, 'pwd': pw}),
       );
 
-      final data = jsonDecode(response.body);
-
-      if (data["success"] == true) {
-        // JSON 문자열로 변환
-        String userJson = jsonEncode(data["user"]);
-
-        // SharedPreferences에 저장
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('userInfo', userJson);
-        Navigator.pop(context, true);
-      }else if(data["pending"]==true) {
-        _showPendingDialog();
-        idController.text = "";
-        pwController.text = "";
-      }else{
-          setState(() {
-            _message = data["message"] ?? "로그인 실패";
-            _messageColor = Colors.red;
-        });
+      // 응답 본문 미출력/HTML일 때 대비
+      if (res.statusCode != 200 || res.body.isEmpty) {
+        throw Exception('서버 통신 오류 (${res.statusCode})');
       }
+
+      final json = jsonDecode(res.body);
+      if (json is! Map || json['success'] != true) {
+        _showSnack(json['message']?.toString() ?? '로그인에 실패했습니다.');
+        return;
+      }
+
+      // 서버가 내려주는 유저 정보(비밀번호 제외) 통째로 저장
+      final user = Map<String, dynamic>.from(json['user'] ?? {});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('userId', user['userid']?.toString() ?? id);
+      await prefs.setString('nickname', user['name']?.toString() ?? '');
+      await prefs.setString('userInfo', jsonEncode(user)); // JSON 문자열로 저장
+
+      if (!mounted) return;
+      Navigator.pop(context, true);
     } catch (e) {
-      setState(() {
-        _message = '서버와 연결할 수 없습니다';
-        _messageColor = Colors.red;
-      });
+      _showSnack('로그인 중 오류가 발생했습니다. (${e.toString()})');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -121,35 +101,33 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 40),
 
-            // 아이디 입력
+            // 아이디
             TextField(
-              controller: idController,
+              controller: _idController,
               decoration: const InputDecoration(labelText: '아이디'),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) =>
+                  FocusScope.of(context).requestFocus(_pwFocus),
             ),
             const SizedBox(height: 16),
 
-            // 비밀번호 입력
+            // 비밀번호 (Enter = 로그인)
             TextField(
-              controller: pwController,
-              decoration: const InputDecoration(labelText: '비밀번호'),
+              controller: _pwController,
+              focusNode: _pwFocus,
               obscureText: true,
+              decoration: const InputDecoration(labelText: '비밀번호'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _login(), // ⬅ 엔터로 로그인
             ),
-            const SizedBox(height: 8),
-
-            if (_message.isNotEmpty)
-              Text(
-                _message,
-                style: TextStyle(color: _messageColor),
-              ),
-
             const SizedBox(height: 24),
 
             // 로그인 버튼
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _tryLogin,
-                child: const Text('로그인'),
+                onPressed: _busy ? null : _login,
+                child: Text(_busy ? '로그인 중...' : '로그인'),
               ),
             ),
             const SizedBox(height: 20),
@@ -159,30 +137,39 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 InkWell(
-                  onTap: () {
+                  onTap: _busy
+                      ? null
+                      : () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const FindIDPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const FindIDPage()),
                     );
                   },
                   child: const Text('아이디 찾기'),
                 ),
                 const Text('|'),
                 InkWell(
-                  onTap: () {
+                  onTap: _busy
+                      ? null
+                      : () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const FindPwPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const FindPwPage()),
                     );
                   },
                   child: const Text('비밀번호 찾기'),
                 ),
                 const Text('|'),
                 InkWell(
-                  onTap: () {
+                  onTap: _busy
+                      ? null
+                      : () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const TermsPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const TermsPage()),
                     );
                   },
                   child: const Text('회원가입'),
