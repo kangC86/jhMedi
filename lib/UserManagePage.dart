@@ -66,12 +66,12 @@ class _UserManagePageState extends State<UserManagePage> {
   }
 
   void showUserDetail(Map<String, dynamic> user) {
-    final filtered = Map.of(user)..remove("pwd")..remove("guid");
+    final filtered = Map.of(user)..remove("pwd");
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('${user["belong"] ?? ""}${user["name"]} - ${user["userType"]}'),
+        title: Text('${user["company_name"] ?? ""}${user["name"]} - ${user["userType"]}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: filtered.entries
@@ -132,7 +132,7 @@ class _UserManagePageState extends State<UserManagePage> {
         itemBuilder: (_, index) {
           final user = userList[index];
           final display =
-              '(${user["belong"] ?? ""})${user["name"]} - ${user["userType"]}';
+              '(${user["company_name"] ?? ""})${user["name"]} - ${user["userType"]}';
 
           return ListTile(
             title: Text(display),

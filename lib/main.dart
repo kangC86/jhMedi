@@ -7,6 +7,7 @@ import 'MyPlacePage.dart';
 import 'dart:convert';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // 필수
   runApp(const MaterialApp(home: HomeScreen()));
 }
 
