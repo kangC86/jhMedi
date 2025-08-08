@@ -65,8 +65,6 @@ class _LoginPageState extends State<LoginPage> {
       final user = Map<String, dynamic>.from(json['user'] ?? {});
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('userId', user['userid']?.toString() ?? id);
-      await prefs.setString('nickname', user['name']?.toString() ?? '');
       await prefs.setString('userInfo', jsonEncode(user)); // JSON 문자열로 저장
 
       if (!mounted) return;

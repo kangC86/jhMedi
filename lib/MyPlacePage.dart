@@ -11,7 +11,7 @@ class MyPlacePage extends StatefulWidget {
 }
 
 class _MyPlacePageState extends State<MyPlacePage> {
-  Map<String, dynamic>? user;
+  Map<String, dynamic>? curUser;
 
   @override
   void initState() {
@@ -24,22 +24,22 @@ class _MyPlacePageState extends State<MyPlacePage> {
     final userJson = prefs.getString('userInfo');
     if (userJson != null) {
       setState(() {
-        user = jsonDecode(userJson);
+        curUser = jsonDecode(userJson);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (user == null) {
+    if (curUser == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final userName = user!["name"] ?? "";
-    final userEmail = user!["email"] ?? "";
-    final userType = user!["userType"] ?? "";
+    final userName = curUser!["name"] ?? "";
+    final userEmail = curUser!["email"] ?? "";
+    final userType = curUser!["userType"] ?? "";
 
     return Scaffold(
       appBar: AppBar(

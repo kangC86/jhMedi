@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'LoginPage.dart';
 import 'TermsPage.dart';
-import 'MyPlacePage.dart'; // ⬅ 마이페이지 추가
+import 'MyPlacePage.dart';
+import 'PartnerInquiryPage.dart';
 
 // TODO: 의뢰사/파트너사 액션 페이지로 교체
 // import 'ClientQuoteRequestPage.dart';
@@ -24,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isLoggedIn = false;
-  String? nickname;
+  Map<String, dynamic>? curUser;
 
   @override
   void initState() {
@@ -35,8 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadLogin() async {
     final p = await SharedPreferences.getInstance();
     setState(() {
-      isLoggedIn = p.getBool('isLoggedIn') ?? false;
-      nickname = p.getString('nickname');
+      isLoggedIn = false;
+      final userJson = p.getString('userInfo');
+      if (userJson != null) {
+        isLoggedIn = p.getBool('isLoggedIn') ?? false;
+        curUser = jsonDecode(userJson);
+      }
     });
   }
 
@@ -69,11 +76,20 @@ class _HomeScreenState extends State<HomeScreen> {
               // 상단 네비 (의뢰사/파트너사/제휴문의/고객지원)
               _TopNav(text: '의뢰사', onTap: () {}),
               _TopNav(text: '파트너사', onTap: () {}),
-              _TopNav(text: '제휴문의', onTap: () {}),
+              _TopNav(
+                text: '제휴문의',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PartnerInquiryPage()),
+                  );
+                },
+              ),
+
               _TopNav(text: '고객지원', onTap: () {}),
               const Spacer(),
               if (isLoggedIn) ...[
-                Text(nickname != null ? '${nickname!}님' : '', style: const TextStyle(color: Colors.black87)),
+                Text('${curUser?['name']!}님', style: const TextStyle(color: Colors.black87)),
                 const SizedBox(width: 8),
 
                 // ✅ 마이페이지 버튼 복구
