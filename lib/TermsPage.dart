@@ -177,7 +177,7 @@ class _TermsPageState extends State<TermsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const CompanyJoinPage(userType: 'actor'),
+                          builder: (_) => const CompanyJoinPage(userType: 'partner'),
                         ),
                       );
                     }

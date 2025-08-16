@@ -7,12 +7,14 @@ import 'LoginPage.dart';
 import 'TermsPage.dart';
 import 'MyPlacePage.dart';
 import 'PartnerInquiryPage.dart';
+import 'QuoteRequestPage.dart';
+import 'auth_service.dart';
 
 // TODO: 의뢰사/파트너사 액션 페이지로 교체
-// import 'ClientQuoteRequestPage.dart';
-// import 'PartnerQuoteSendPage.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthService.load(); // 앱 시작 시 로그인 상태 로드
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
     home: HomeScreen(),
@@ -26,36 +28,32 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool isLoggedIn = false;
-  Map<String, dynamic>? curUser;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLogin();
-  }
-
-  Future<void> _loadLogin() async {
+  /// 로그인 사용자 정보(SharedPreferences의 userInfo)를 읽어 이름 표시
+  Future<Map<String, dynamic>?> _loadUserInfo() async {
     final p = await SharedPreferences.getInstance();
-    setState(() {
-      isLoggedIn = false;
-      final userJson = p.getString('userInfo');
-      if (userJson != null) {
-        isLoggedIn = p.getBool('isLoggedIn') ?? false;
-        curUser = jsonDecode(userJson);
-      }
-    });
+    final j = p.getString('userInfo');
+    if (j == null) return null;
+    try {
+      return jsonDecode(j) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
   }
 
-  Future<void> _handleLogin() async {
-    final ok = await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage()));
-    if (ok == true) _loadLogin();
+  Future<void> _handleLogin(BuildContext context) async {
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
+    // LoginPage에서 성공 시 AuthService.setLoggedIn(true) 호출한다고 가정
+    // isLoggedIn ValueNotifier가 바뀌므로 여기서 setState는 불필요
+    if (ok != true) return;
   }
 
   Future<void> _handleLogout() async {
     final p = await SharedPreferences.getInstance();
-    await p.clear();
-    _loadLogin();
+    await p.clear();                  // 저장된 사용자 정보/토큰 제거
+    await AuthService.setLoggedIn(false); // 전역 로그인 상태 갱신 → UI 자동 리빌드
   }
 
   @override
@@ -73,11 +71,20 @@ class _HomeScreenState extends State<HomeScreen> {
               // 로고
               Image.asset('assets/logo.png', height: 36),
               const SizedBox(width: 12),
+
               // 상단 네비 (의뢰사/파트너사/제휴문의/고객지원)
-              _TopNav(text: '의뢰사', onTap: () {}),
+              _TopNav(
+                text: '의뢰사',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QuoteRequestPage()),
+                  );
+                },
+              ),
               _TopNav(text: '파트너사', onTap: () {}),
               _TopNav(
-                text: '제휴문의',
+                text: '제휴/문의',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -85,37 +92,66 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-
-              _TopNav(text: '고객지원', onTap: () {}),
               const Spacer(),
-              if (isLoggedIn) ...[
-                Text('${curUser?['name']!}님', style: const TextStyle(color: Colors.black87)),
-                const SizedBox(width: 8),
 
-                // ✅ 마이페이지 버튼 복구
-                TextButton(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MyPlacePage()),
+              // ⇣⇣ 로그인 상태 구독: 상태 바뀌면 상단 UI 자동 갱신
+              ValueListenableBuilder<bool>(
+                valueListenable: AuthService.isLoggedIn,
+                builder: (context, loggedIn, _) {
+                  if (!loggedIn) {
+                    // 비로그인
+                    return Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => _handleLogin(context),
+                          child: const Text('로그인', style: TextStyle(color: Colors.black)),
+                        ),
+                        const SizedBox(width: 6),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TermsPage()),
+                          ),
+                          child: const Text('회원가입', style: TextStyle(color: Colors.black)),
+                        ),
+                      ],
                     );
-                    _loadLogin(); // 돌아와서 상태 갱신
-                  },
-                  child: const Text('마이페이지', style: TextStyle(color: Colors.black)),
-                ),
+                  }
 
-                TextButton(
-                  onPressed: _handleLogout,
-                  child: const Text('로그아웃', style: TextStyle(color: Colors.black)),
-                ),
-              ] else ...[
-                TextButton(onPressed: _handleLogin, child: const Text('로그인', style: TextStyle(color: Colors.black))),
-                const SizedBox(width: 6),
-                TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsPage())),
-                  child: const Text('회원가입', style: TextStyle(color: Colors.black)),
-                ),
-              ],
+                  // 로그인 상태일 때: SharedPreferences에서 이름만 가볍게 가져와 표시
+                  return FutureBuilder<Map<String, dynamic>?>(
+                    future: _loadUserInfo(),
+                    builder: (context, snap) {
+                      final name = (snap.data?['name'] ?? '') as String? ?? '';
+                      return Row(
+                        children: [
+                          Text(
+                            name.isEmpty ? '안녕하세요' : '$name님',
+                            style: const TextStyle(color: Colors.black87),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const MyPlacePage()),
+                              );
+                              // 마이페이지에서 변경된 정보는 SharedPreferences에 반영되어 있을 것이고
+                              // 로그인 상태는 그대로 → 이름 갱신은 FutureBuilder가 future 재생성 시 반영
+                              setState(() {}); // 이름만 새로고침
+                            },
+                            child: const Text('마이페이지', style: TextStyle(color: Colors.black)),
+                          ),
+                          TextButton(
+                            onPressed: _handleLogout,
+                            child: const Text('로그아웃', style: TextStyle(color: Colors.black)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -127,11 +163,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 24),
-                // 히어로 섹션
+
+                // 히어로 섹션 (중앙정렬)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center, // 중앙정렬
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       _H1("국내 유일 임상시험 및 인허가 원클릭 견적 플랫폼!"),
                       const SizedBox(height: 4),
@@ -152,34 +189,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           border: Border.all(color: Color(0xFFE7E5EF)),
                         ),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.health_and_safety_outlined, size: 64, color: Color(0xFF6B5BD2)),
+                        child: const Icon(
+                          Icons.health_and_safety_outlined,
+                          size: 64,
+                          color: Color(0xFF6B5BD2),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 18),
-
-                // 지표 스트립
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE7E5EF)),
-                  ),
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    runSpacing: 12,
-                    children: const [
-                      _Metric(title: '가입 인원', value: '180,019명'),
-                      _Metric(title: '가입 기업수', value: '3,546사'),
-                      _Metric(title: '최근 1년 누적 프로젝트', value: '3,986건'),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 28),
 
                 // 두 개 카드
                 Padding(
@@ -187,20 +206,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: isWide
                       ? Row(
                     children: [
-                      Expanded(child: _roleCardClient(onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientQuoteRequestPage()));
-                      })),
+                      // 의뢰사 카드
+                      Expanded(
+                        child: _roleCardClient(onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const QuoteRequestPage()),
+                          );
+                        }),
+                      ),
                       const SizedBox(width: 20),
-                      Expanded(child: _roleCardPartner(onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnerQuoteSendPage()));
-                      })),
+                      // 파트너사 카드
+                      Expanded(
+                        child: _roleCardPartner(onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const QuoteRequestPage()),
+                          );
+                        }),
+                      ),
                     ],
                   )
                       : Column(
                     children: [
-                      _roleCardClient(onTap: () {}),
+                      _roleCardClient(onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const QuoteRequestPage()),
+                        );
+                      }),
                       const SizedBox(height: 16),
-                      _roleCardPartner(onTap: () {}),
+                      _roleCardPartner(onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const QuoteRequestPage()),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -245,9 +286,9 @@ class _H1Accent extends StatelessWidget {
   final String t;
   const _H1Accent(this.t);
   @override
-  Widget build(BuildContext context) => Text(
-    t,
-    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF6B5BD2)),
+  Widget build(BuildContext context) => const Text(
+    "손잡다매칭",
+    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF6B5BD2)),
   );
 }
 

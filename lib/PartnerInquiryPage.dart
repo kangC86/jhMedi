@@ -109,7 +109,7 @@ class _PartnerInquiryPageState extends State<PartnerInquiryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('제휴문의'),
+        title: const Text('제휴/문의'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'TermsPage.dart';
 import 'FindIDPage.dart';
 import 'FindPwPage.dart';
+import 'auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -43,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _busy = true);
     try {
-      // TODO: 서버 주소 확인
       final res = await http.post(
         Uri.parse('https://sonjobdamd.com/func/hclogin.php'),
         headers: {'Content-Type': 'application/json'},
@@ -68,6 +68,7 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('userInfo', jsonEncode(user)); // JSON 문자열로 저장
 
       if (!mounted) return;
+      await AuthService.setLoggedIn(true);
       Navigator.pop(context, true);
     } catch (e) {
       _showSnack('로그인 중 오류가 발생했습니다. (${e.toString()})');

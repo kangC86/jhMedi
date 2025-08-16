@@ -38,6 +38,7 @@ dependencies:
   webview_flutter_wkwebview: ^3.10.2
   js: ^0.6.7
   web: any
+  file_picker: ^8.0.3
 
 dev_dependencies:
   flutter_test:

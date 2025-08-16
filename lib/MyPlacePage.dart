@@ -98,7 +98,7 @@ class _MyPlacePageState extends State<MyPlacePage> {
             _sectionHeader('계약 관리'),
             _simpleListItem('수정 중인 견적'),
             _simpleListItem('보낸 견적'),
-          ] else if (userType == "actor") ...[
+          ] else if (userType == "partner") ...[
             _sectionHeader('견적 관리'),
             _simpleListItem('받은 견적'),
           ],
